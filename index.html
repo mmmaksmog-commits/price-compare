@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Что выгоднее — сравнение цен</title>
+  <meta name="description" content="Какая упаковка выгоднее? Сравнивайте цену за килограмм, литр или штуку прямо в магазине. Мультипаки и скидки.">
+  <meta name="theme-color" content="#fff8e7">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛒</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg: #fff8e7; --card: #fff; --ink: #1d1a14; --muted: #7d7462; --line: #efe5cf; --yellow: #ffc933; --green: #16a34a; --red: #dc2626; color-scheme: light; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 Rubik, system-ui, sans-serif; }
+    button, input, select { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    .app { max-width: 620px; margin: 0 auto; padding: calc(22px + env(safe-area-inset-top)) 16px calc(40px + env(safe-area-inset-bottom)); }
+    h1 { margin: 0; font-size: clamp(32px, 8vw, 44px); font-weight: 800; letter-spacing: -0.02em; }
+    h1 span { padding: 0 8px; border-radius: 10px; background: var(--yellow); }
+    .lead { margin: 10px 0 0; color: var(--muted); }
+    .verdict { margin-top: 18px; padding: 18px; border-radius: 22px; background: var(--ink); color: #fff; }
+    .verdict b { display: block; font-size: 20px; }
+    .verdict span { color: #d8d0bd; }
+    .items { display: grid; gap: 10px; margin-top: 14px; }
+    .item { position: relative; padding: 14px; border: 2px solid var(--line); border-radius: 20px; background: var(--card); transition: border-color 0.2s, transform 0.2s; }
+    .item.best { border-color: var(--green); box-shadow: 0 14px 30px -20px rgba(22, 163, 74, 0.6); }
+    .item.best::before { content: '👑 Выгоднее всего'; position: absolute; top: -12px; left: 14px; padding: 2px 10px; border-radius: 999px; background: var(--green); color: #fff; font-size: 12px; font-weight: 700; }
+    .item__top { display: flex; gap: 8px; align-items: center; }
+    .item__top input { flex: 1; min-width: 0; padding: 4px 0; border: 0; background: transparent; font-weight: 700; font-size: 17px; outline: none; }
+    .rm { width: 32px; height: 32px; border: 0; border-radius: 10px; background: #fdf3dc; color: var(--muted); }
+    .fields { display: grid; grid-template-columns: 1.2fr 1fr 0.9fr 0.8fr; gap: 6px; margin-top: 10px; }
+    .f { display: grid; gap: 2px; font-size: 11px; font-weight: 600; color: var(--muted); }
+    .f input, .f select { width: 100%; min-width: 0; padding: 10px 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); font-size: 17px; font-weight: 600; outline: none; }
+    .f input:focus, .f select:focus { border-color: var(--yellow); }
+    .result { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); }
+    .result b { font-size: 20px; }
+    .result span { font-weight: 700; font-size: 14px; }
+    .result .more { color: var(--red); }
+    .result .ok { color: var(--green); }
+    .meter { height: 6px; margin-top: 8px; border-radius: 3px; background: #f5ecd6; overflow: hidden; }
+    .meter i { display: block; height: 100%; border-radius: 3px; background: var(--yellow); }
+    .best .meter i { background: var(--green); }
+    .add { width: 100%; margin-top: 12px; padding: 14px; border: 2px dashed #e4d6b4; border-radius: 18px; background: transparent; color: var(--muted); font-weight: 700; }
+    .presets { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 16px; }
+    .presets button { padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); font-size: 14px; }
+    .tip { margin-top: 18px; padding: 14px 16px; border-radius: 16px; background: #fdf0c9; font-size: 14px; }
+    @media (max-width: 420px) { .fields { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <h1>Что <span>выгоднее?</span></h1>
+    <p class="lead">Введите цену и объём упаковок — посчитаю цену за килограмм, литр или штуку и подскажу, что брать.</p>
+    <div class="verdict" id="verdict"></div>
+    <div class="items" id="items"></div>
+    <button class="add" id="add">＋ Добавить вариант</button>
+    <div class="presets"><span style="color:var(--muted);font-size:14px;align-self:center">Примеры:</span><button data-p="milk">🥛 Молоко</button><button data-p="coffee">☕ Кофе</button><button data-p="paper">🧻 Бумага</button><button data-p="clear">Очистить</button></div>
+    <p class="tip">💡 Обращайте внимание на «мультипаки»: в поле «×» укажите, сколько штук в упаковке, — например, 3 × 200 г.</p>
+  </main>
+
+  <script>
+    const UNITS = { 'г': ['weight', 0.001], 'кг': ['weight', 1], 'мл': ['volume', 0.001], 'л': ['volume', 1], 'шт': ['pcs', 1] };
+    const BASE = { weight: 'кг', volume: 'л', pcs: 'шт' };
+    const PRESETS = {
+      milk: [{ name: 'Молоко 0,9 л', price: 89, amount: 0.9, unit: 'л', count: 1, disc: 0 }, { name: 'Молоко 1,4 л', price: 129, amount: 1.4, unit: 'л', count: 1, disc: 0 }, { name: 'Молоко 2 л по акции', price: 199, amount: 2, unit: 'л', count: 1, disc: 15 }],
+      coffee: [{ name: 'Зерно 250 г', price: 590, amount: 250, unit: 'г', count: 1, disc: 0 }, { name: 'Зерно 1 кг', price: 1890, amount: 1, unit: 'кг', count: 1, disc: 0 }, { name: 'Капсулы 10 шт × 5,5 г', price: 450, amount: 5.5, unit: 'г', count: 10, disc: 0 }],
+      paper: [{ name: '4 рулона', price: 149, amount: 1, unit: 'шт', count: 4, disc: 0 }, { name: '12 рулонов', price: 399, amount: 1, unit: 'шт', count: 12, disc: 0 }, { name: '32 рулона', price: 1190, amount: 1, unit: 'шт', count: 32, disc: 10 }],
+    };
+    const $ = (id) => document.getElementById(id);
+    let items = (() => { try { return JSON.parse(localStorage.getItem('price_items')) ?? structuredClone(PRESETS.milk); } catch { return structuredClone(PRESETS.milk); } })();
+    const save = () => { try { localStorage.setItem('price_items', JSON.stringify(items)); } catch {} };
+    const money = (n) => n.toLocaleString('ru-RU', { maximumFractionDigits: n < 10 ? 2 : 0 }) + ' ₽';
+    const num = (v) => { const n = parseFloat(String(v).replace(',', '.')); return Number.isFinite(n) && n > 0 ? n : 0; };
+
+    function perUnit(it) {
+      const [group, k] = UNITS[it.unit];
+      const qty = num(it.amount) * k * (num(it.count) || 1);
+      const price = num(it.price) * (1 - (num(it.disc) || 0) / 100);
+      return qty && price ? { group, value: price / qty, price } : null;
+    }
+
+    function renderItems() {
+      $('items').innerHTML = items.map((it, i) => `
+        <div class="item" data-i="${i}">
+          <div class="item__top"><input value="${(it.name || '').replace(/"/g, '&quot;')}" data-f="name" placeholder="Вариант ${i + 1}" aria-label="Название"><button class="rm" data-rm="${i}" aria-label="Удалить">✕</button></div>
+          <div class="fields">
+            <label class="f">Цена, ₽<input inputmode="decimal" data-f="price" value="${it.price ?? ''}" placeholder="0"></label>
+            <label class="f">Объём<input inputmode="decimal" data-f="amount" value="${it.amount ?? ''}" placeholder="0"></label>
+            <label class="f">Ед.<select data-f="unit">${Object.keys(UNITS).map((u) => `<option ${u === it.unit ? 'selected' : ''}>${u}</option>`).join('')}</select></label>
+            <label class="f">× штук<input inputmode="numeric" data-f="count" value="${it.count ?? 1}"></label>
+          </div>
+          <label class="f" style="margin-top:6px;grid-template-columns:auto 80px;align-items:center;justify-content:start;gap:8px">Скидка, %<input inputmode="numeric" data-f="disc" value="${it.disc || ''}" placeholder="0"></label>
+          <div class="result" data-res="${i}"></div>
+          <div class="meter"><i data-bar="${i}"></i></div>
+        </div>`).join('');
+      calc();
+    }
+
+    // Пересчитываем только результаты, чтобы не сбивать фокус в полях ввода
+    function calc() {
+      const res = items.map(perUnit);
+      const groups = new Set(res.filter(Boolean).map((r) => r.group));
+      const mixed = groups.size > 1;
+      const valid = res.map((r, i) => [r, i]).filter(([r]) => r);
+      const best = !mixed && valid.length ? valid.reduce((a, b) => (b[0].value < a[0].value ? b : a)) : null;
+      const max = valid.length ? Math.max(...valid.map(([r]) => r.value)) : 1;
+      res.forEach((r, i) => {
+        const box = document.querySelector(`[data-res="${i}"]`);
+        const card = box.closest('.item');
+        card.classList.toggle('best', Boolean(best && best[1] === i && valid.length > 1));
+        document.querySelector(`[data-bar="${i}"]`).style.width = r ? `${(r.value / max) * 100}%` : '0';
+        if (!r) { box.innerHTML = '<span style="color:var(--muted)">Введите цену и объём</span>'; return; }
+        const diff = best && !mixed ? (r.value / best[0].value - 1) * 100 : 0;
+        box.innerHTML = `<b>${money(r.value)} / ${BASE[r.group]}</b>${!best || mixed ? '' : best[1] === i ? '<span class="ok">лучшая цена</span>' : `<span class="more">дороже на ${diff.toFixed(0)}%</span>`}`;
+      });
+      const v = $('verdict');
+      if (mixed) v.innerHTML = '<b>⚠️ Разные единицы</b><span>Нельзя сравнить граммы с литрами или штуками — выберите одинаковые единицы.</span>';
+      else if (valid.length < 2) v.innerHTML = '<b>Добавьте хотя бы два варианта</b><span>Тогда станет понятно, что выгоднее.</span>';
+      else {
+        const worst = valid.reduce((a, b) => (b[0].value > a[0].value ? b : a));
+        const pct = (1 - best[0].value / worst[0].value) * 100;
+        const name = items[best[1]].name || `Вариант ${best[1] + 1}`;
+        v.innerHTML = `<b>👑 Берите «${name.replace(/</g, '&lt;')}»</b><span>Это на ${pct.toFixed(0)}% дешевле самого дорогого варианта: ${money(best[0].value)} против ${money(worst[0].value)} за ${BASE[best[0].group]}.</span>`;
+      }
+      save();
+    }
+
+    $('items').addEventListener('input', (e) => {
+      const el = e.target.closest('[data-f]'); if (!el) return;
+      items[+el.closest('.item').dataset.i][el.dataset.f] = el.value;
+      calc();
+    });
+    $('items').addEventListener('click', (e) => { const b = e.target.closest('[data-rm]'); if (b) { items.splice(+b.dataset.rm, 1); renderItems(); } });
+    $('add').onclick = () => {
+      const last = items[items.length - 1];
+      items.push({ name: '', price: '', amount: '', unit: last?.unit || 'г', count: 1, disc: 0 });
+      renderItems();
+      document.querySelectorAll('.item')[items.length - 1].querySelector('[data-f="price"]').focus();
+    };
+    document.querySelector('.presets').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-p]'); if (!b) return;
+      items = b.dataset.p === 'clear' ? [{ name: '', price: '', amount: '', unit: 'г', count: 1, disc: 0 }, { name: '', price: '', amount: '', unit: 'г', count: 1, disc: 0 }] : structuredClone(PRESETS[b.dataset.p]);
+      renderItems();
+    });
+    renderItems();
+  </script>
+</body>
+</html>
